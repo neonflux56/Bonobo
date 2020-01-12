@@ -48,16 +48,31 @@ if __name__ == '__main__':
 #########################################
 
 #Task 2
-data = pd.read_csv("train.csv")
+data = pd.read_csv("train.csv",header=0)
 
 def extract():
-    yield from data.itertuples()
-
-num = list(data.keys()).index("YearBuilt")
+    yield from data.itertuples(index = False)
 
 def discardold(*args):
-    if int(args[num+1]) < 1980:
-        return None
+    if int(args[list(data.keys()).index("YearBuilt")]) > 1980:
+        yield args
+
+abbrv_data = pd.read_csv("output.csv",header=0)
+
+def replaceabbr(*args):
+    #Replace for MSZoning
+    s1 = args[list(data.keys()).index("MSZoning")]
+    s2 = list(abbrv_data["Description"])[list(abbrv_data["Abbreviation"]).index(s1)]
+    lst = list(args)
+    lst[list(data.keys()).index("MSZoning")] = s2
+    #Replace for Landslope
+    s3 = args[list(data.keys()).index("LandSlope")]
+    s4 = list(abbrv_data["Description"])[list(abbrv_data["Abbreviation"]).index(s3)]
+    lst[list(data.keys()).index("LandSlope")] = s4
+    yield tuple(lst)
+
+
+
 
 def load(*args):
     print(args)
@@ -76,7 +91,7 @@ def write_to_file(f, *row):
 if __name__ == '__main__':
     graph = bonobo.Graph()
     graph.add_chain(
-        extract, discardold, load
+        extract, discardold, replaceabbr,load
     )
     bonobo.run(graph)
 
